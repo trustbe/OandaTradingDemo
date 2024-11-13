@@ -9,7 +9,7 @@ import oandapyV20.endpoints.trades as trades
 from sentiment_xm_fetcher import get_last_sentiment
 
 class OandaTrader:
-    def __init__(self, account_id, api_token='25ebfb9ee277e219b95233d58cdc8140-bec4d827bcf87c80e5e529b6dc772f55'):
+    def __init__(self, account_id, api_token='339d7f0daf44ae753c71541ad751efa1-50dc075876f38dff8c5e8bbb3e8ee196'):
         """Initialize Oanda trader with account details."""
         self.account_id = account_id
         self.client = opy.API(access_token=api_token)
