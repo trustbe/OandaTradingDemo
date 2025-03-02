@@ -6,10 +6,10 @@ import oandapyV20 as opy
 from oandapyV20.contrib.requests import MarketOrderRequest, TradeCloseRequest
 import oandapyV20.endpoints.orders as orders
 import oandapyV20.endpoints.trades as trades
-from sentiment_xm_fetcher import get_last_sentiment
+from sentiment_fetcher import get_last_sentiment
 
 class OandaTrader:
-    def __init__(self, account_id, api_token='339d7f0daf44ae753c71541ad751efa1-50dc075876f38dff8c5e8bbb3e8ee196'):
+    def __init__(self, account_id, api_token='12e553a5be65a2c80b927439859d0a41-f4e608413e34bcffe59e5285ad25c3de'):
         """Initialize Oanda trader with account details."""
         self.account_id = account_id
         self.client = opy.API(access_token=api_token)
@@ -80,8 +80,9 @@ def main():
     parser = argparse.ArgumentParser(description='Oanda Trading Script based on XM Sentiment')
     parser.add_argument('--account', required=True, help='Oanda account ID')
     parser.add_argument('--symbol', required=True, help='Trading symbol (e.g., EURUSD)')
+    parser.add_argument('--source', required=True, help='Trading source (e.g., xm)')
+    parser.add_argument('--timeframe', required=True, type=int, help='Trading timeframe avg (e.g., 1440)')
     parser.add_argument('--units', required=True, type=int, help='Number of units to trade')
-    parser.add_argument('--longcross', type=int, default=0, help='Long crossing threshold (default: 0)')
     
     args = parser.parse_args()
 
@@ -89,26 +90,32 @@ def main():
     trader = OandaTrader(args.account)
 
     # Get sentiment data
-    sentiment_data = get_last_sentiment(args.symbol)
-    print (sentiment_data)
-
+    sentiment_data = get_last_sentiment(symbol=args.symbol, source=args.source, timeframe=args.timeframe)
     if not sentiment_data:
         print("Error: Could not fetch sentiment data")
         sys.exit(1)
 
-    clientLongCount = float(sentiment_data['clientLongCount'])
-    clientShortCount = float(sentiment_data['clientShortCount'])
+    long_percentage = float(sentiment_data)
+
+    if long_percentage == 0:
+        print("Error: Invalid sentiment data (longPercentage is 0)")
+        sys.exit(1)
+
+    print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}")
 
     # Trading logic
     command = "_"
-    if clientLongCount > clientShortCount:
+    if long_percentage < -5:
         # Close all long positions before going short
         trader.close_all_orders(args.symbol, "LONG")
         command = "SELL"
-    elif clientLongCount < clientShortCount:
+    elif long_percentage > 5:
         # Close all short positions before going long
         trader.close_all_orders(args.symbol, "SHORT")
         command = "BUY"
+    else:
+        trader.close_all_orders(args.symbol, "LONG")
+        trader.close_all_orders(args.symbol, "SHORT")
 
     # Execute trades based on command
     if command == "SELL" and trader.get_orders_count(args.symbol) == 0:
