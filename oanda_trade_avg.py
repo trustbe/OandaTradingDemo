@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+"""
+Oanda Automated Trading Script
+
+This script implements a contrarian trading strategy based on market sentiment data.
+It fetches sentiment from ClickHouse database and executes trades on Oanda platform.
+
+Trading Logic:
+- When sentiment is extremely bearish (< -treshold): Open SHORT positions
+- When sentiment is extremely bullish (> +treshold): Open LONG positions
+- When sentiment is neutral: Close all positions
+
+The sentiment data comes from various sources (XM, FXBlue, etc.) and represents
+the percentage of retail clients who are long. The script trades against the crowd.
+"""
+
 import os
 import sys
 import argparse
@@ -136,61 +151,80 @@ class OandaTrader:
 def main():
 	"""Main function to handle the trading logic."""
 	parser = argparse.ArgumentParser(description='Oanda Trading Script based on XM Sentiment')
+	# Command line argument configuration
 	parser.add_argument('--account', required=True, help='Oanda account ID')
 	parser.add_argument('--symbol', required=True, help='Trading symbol (e.g., EURUSD, XAUUSD)')
-	parser.add_argument('--source', required=True, help='Trading source (e.g., xm, fxblue)')
-	parser.add_argument('--timeframe', required=True, type=int, help='Lookback period in minutes for sentiment averaging (e.g., 480, 1440)')
-	parser.add_argument('--units', required=True, type=int, help='Number of units to trade')
-	parser.add_argument('--treshold', type=float, default=1.0, help='Treshold for trading signals (default: 1.0)')
-	
+	parser.add_argument('--source', required=True, help='Sentiment data source provider (e.g., "xm" for XM.com broker data, "fxblue" for FXBlue sentiment data). Must match ClickHouse table prefix.')
+	parser.add_argument('--timeframe', required=True, type=int, help='Lookback period in minutes for sentiment averaging (e.g., 480 for 8 hours, 1440 for 24 hours)')
+	parser.add_argument('--units', required=True, type=int, help='Number of units to trade (position size)')
+	parser.add_argument('--treshold', type=float, default=1.0, help='Sentiment treshold for trading signals - larger values require more extreme sentiment (default: 1.0)')
+
 	args = parser.parse_args()
 
-	# Initialize trader
+	# Initialize Oanda trading client with account credentials
 	trader = OandaTrader(args.account)
 
-	# Get sentiment data
-	# Normalize symbol for ClickHouse table lookup
+	# Fetch sentiment data from ClickHouse database
+	# Normalize symbol format: remove underscores/hyphens for table name compatibility
+	# Example: "XAU_USD" → "xauusd" to match table name st_{source}_xauusd
 	symbol_for_db = args.symbol.replace('_', '').replace('-', '')
 	sentiment_data = get_last_sentiment(source=args.source, symbol=symbol_for_db, timeframe=args.timeframe)
 	if not sentiment_data:
 		print("Error: Could not fetch sentiment data")
 		sys.exit(1)
 
+	# Validate sentiment data
 	if sentiment_data == 0:
-		print("Error: Invalid sentiment data (longPercentage is 0)")
+		print("Error: Invalid sentiment data (received 0 value)")
 		sys.exit(1)
 
+	# Round sentiment value for cleaner display
 	long_percentage = round(sentiment_data)
 
 	print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}, Treshold: ±{args.treshold}, Timeframe: {args.timeframe} min")
 
-	# Log current positions
+	# Display current open positions before making trading decisions
 	trader.log_current_positions(args.symbol)
 
-	# Trading logic with configurable treshold
-	command = "_"
+	# === CONTRARIAN TRADING LOGIC ===
+	# Trade against extreme sentiment (when most traders are wrong)
+	# Sentiment interpretation:
+	#   - Negative values: Retail traders are net long → Signal to go SHORT
+	#   - Positive values: Retail traders are net short → Signal to go LONG
+	#   - Near zero: Neutral sentiment → Close all positions
+
+	command = "_"  # Default: no action
 	if long_percentage < -args.treshold:
-		# Close all long positions before going short
+		# Market is heavily long → Contrarian signal: GO SHORT
 		trader.close_all_orders(args.symbol, "LONG")
 		command = "SELL"
 	elif long_percentage > args.treshold:
-		# Close all short positions before going long
+		# Market is heavily short → Contrarian signal: GO LONG
 		trader.close_all_orders(args.symbol, "SHORT")
 		command = "BUY"
 	else:
+		# Sentiment is neutral (within treshold range) → Close all positions
 		trader.close_all_orders(args.symbol, "LONG")
 		trader.close_all_orders(args.symbol, "SHORT")
 
-	# Execute trades based on command
+	# === TRADE EXECUTION ===
+	# Only open new positions if no existing position for this symbol
+	# This prevents duplicate positions and ensures clean trade management
+
 	if command == "SELL" and trader.get_orders_count(args.symbol) == 0:
+		# Open SHORT position (negative units indicate sell)
 		print("Opening SHORT position")
 		trader.order_send(args.symbol, -1 * args.units)
+
 	elif command == "BUY" and trader.get_orders_count(args.symbol) == 0:
+		# Open LONG position (positive units indicate buy)
 		print("Opening LONG position")
 		trader.order_send(args.symbol, args.units)
+
 	elif command == "_" and trader.get_orders_count(args.symbol) != 0:
+		# Sentiment is neutral but positions exist → Close everything
 		print("Closing ALL positions")
-		trader.close_all_orders(args.symbol)  # Close all positions regardless of direction
+		trader.close_all_orders(args.symbol)
 
 if __name__ == '__main__':
 	main()
