@@ -9,14 +9,14 @@ CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", CLICKHOUSE_USER)
 CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD", CLICKHOUSE_PASSWORD)
 
 
-def get_last_sentiment(source="xm", symbol="xauusd", minutes=480):
+def get_last_sentiment(source="xm", symbol="xauusd", timeframe=480):
     """
     Fetch the average client sentiment from ClickHouse for any source/symbol combination.
 
     Args:
         source (str): Data source (e.g., "xm", "fxblue", etc.)
         symbol (str): Trading symbol (e.g., "xauusd", "eurusd", etc.)
-        minutes (int): Lookback period in minutes for averaging
+        timeframe (int): Lookback period in minutes for averaging
 
     Returns:
         float: Rounded client ratio or None if error.
@@ -30,11 +30,11 @@ def get_last_sentiment(source="xm", symbol="xauusd", minutes=480):
     query = f"""
     SELECT ROUND(50 - AVG(longval), 1) AS client_ratio
     FROM {table_name}
-    WHERE stamp >= now() - INTERVAL {minutes} MINUTE
+    WHERE stamp >= now() - INTERVAL {timeframe} MINUTE
     FORMAT JSONEachRow;
     """
 
-    print(f"Querying table: {table_name} with {minutes} minute lookback")
+    print(f"Querying table: {table_name} with {timeframe} minute lookback")
 
     try:
         response = requests.post(
@@ -73,9 +73,9 @@ if __name__ == "__main__":
         ("xm", "eurusd", 1440),
     ]
 
-    for src, sym, mins in test_cases:
-        result = get_last_sentiment(src, sym, mins)
+    for src, sym, tf in test_cases:
+        result = get_last_sentiment(src, sym, tf)
         if result is not None:
-            print(f"{src.upper()} {sym.upper()} ({mins}min avg) client ratio: {result}")
+            print(f"{src.upper()} {sym.upper()} ({tf}min avg) client ratio: {result}")
         else:
             print(f"{src.upper()} {sym.upper()}: No data found or error occurred.")

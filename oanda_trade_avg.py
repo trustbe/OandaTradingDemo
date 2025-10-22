@@ -82,10 +82,9 @@ def main():
 	parser.add_argument('--account', required=True, help='Oanda account ID')
 	parser.add_argument('--symbol', required=True, help='Trading symbol (e.g., EURUSD, XAUUSD)')
 	parser.add_argument('--source', required=True, help='Trading source (e.g., xm, fxblue)')
-	parser.add_argument('--timeframe', required=True, type=int, help='Trading timeframe avg (e.g., 1440)')
+	parser.add_argument('--timeframe', required=True, type=int, help='Lookback period in minutes for sentiment averaging (e.g., 480, 1440)')
 	parser.add_argument('--units', required=True, type=int, help='Number of units to trade')
 	parser.add_argument('--threshold', type=float, default=5.0, help='Threshold for trading signals (default: 5.0)')
-	parser.add_argument('--minutes', type=int, default=480, help='Minutes to look back for sentiment average (default: 480)')
 	
 	args = parser.parse_args()
 
@@ -95,7 +94,7 @@ def main():
 	# Get sentiment data
 	# Normalize symbol for ClickHouse table lookup
 	symbol_for_db = args.symbol.replace('_', '').replace('-', '')
-	sentiment_data = get_last_sentiment(source=args.source, symbol=symbol_for_db, minutes=args.minutes)
+	sentiment_data = get_last_sentiment(source=args.source, symbol=symbol_for_db, timeframe=args.timeframe)
 	if not sentiment_data:
 		print("Error: Could not fetch sentiment data")
 		sys.exit(1)
@@ -106,7 +105,7 @@ def main():
 
 	long_percentage = round(sentiment_data)
 
-	print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}, Threshold: ±{args.threshold}, Minutes: {args.minutes}")
+	print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}, Threshold: ±{args.threshold}, Timeframe: {args.timeframe} min")
 
 	# Trading logic with configurable threshold
 	command = "_"

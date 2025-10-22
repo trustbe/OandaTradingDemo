@@ -81,10 +81,9 @@ python3 oanda_trade_avg.py \
     --account YOUR_ACCOUNT_ID \
     --symbol EURUSD \
     --source fxblue \
-    --timeframe 1440 \
+    --timeframe 720 \
     --units 10000 \
-    --threshold 7.5 \
-    --minutes 720
+    --threshold 7.5
 ```
 
 ### Command Line Arguments
@@ -94,10 +93,9 @@ python3 oanda_trade_avg.py \
 | `--account` | Yes | - | Oanda account ID |
 | `--symbol` | Yes | - | Trading symbol (e.g., EURUSD, XAUUSD) |
 | `--source` | Yes | - | Data source (e.g., xm, fxblue) |
-| `--timeframe` | Yes | - | Trading timeframe in minutes |
+| `--timeframe` | Yes | - | Lookback period in minutes for sentiment averaging (e.g., 480, 720, 1440) |
 | `--units` | Yes | - | Number of units to trade |
 | `--threshold` | No | 5.0 | Threshold for trading signals |
-| `--minutes` | No | 480 | Lookback period for sentiment averaging |
 
 ## Trading Logic
 

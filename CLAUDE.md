@@ -15,38 +15,37 @@ This is an automated trading system that executes trades on the Oanda platform b
    - Implements trading logic based on sentiment thresholds (±5%)
    - Manages position opening/closing based on market sentiment
 
-2. **sentiment_fetcher_xauusd.py**: Primary sentiment data fetcher
+2. **sentiment_fetcher_clickhouse.py**: ClickHouse sentiment data fetcher
    - Connects to ClickHouse database at super.fxbold.com
-   - Retrieves 24-hour average client sentiment for XAUUSD
-   - Supports both XM and FXBlue data sources
+   - Dynamically queries any st_{source}_{symbol} table
+   - Supports configurable lookback periods (timeframe in minutes)
+   - Works with any data source (XM, FXBlue, etc.)
 
-3. **sentiment_fetcher.py**: Alternative sentiment fetcher (appears to be legacy)
-   - Uses FXBold API for sentiment history
-   - Supports multiple symbols and timeframes
+3. **config.py**: Configuration file
+   - Stores Oanda API credentials
+   - Stores ClickHouse connection details
+   - Gitignored for security
 
 ### Trading Logic Flow
 
-1. Fetch sentiment data from ClickHouse (24h average)
+1. Fetch sentiment data from ClickHouse (configurable timeframe)
 2. Calculate client ratio: `50 - AVG(longval)`
-3. Execute trades based on thresholds:
-   - Ratio < -5: Close longs, open short position
-   - Ratio > 5: Close shorts, open long position
-   - -5 ≤ Ratio ≤ 5: Close all positions
+3. Execute trades based on configurable threshold (default ±5):
+   - Ratio < -threshold: Close longs, open short position
+   - Ratio > +threshold: Close shorts, open long position
+   - Within threshold range: Close all positions
 
 ## Development Commands
 
 ### Running the Trading Script
 ```bash
-python3 oanda_trade_avg.py --account <ACCOUNT_ID> --symbol <SYMBOL> --source <xm|fxblue> --timeframe <MINUTES> --units <TRADE_SIZE>
+python3 oanda_trade_avg.py --account <ACCOUNT_ID> --symbol <SYMBOL> --source <xm|fxblue> --timeframe <MINUTES> --units <TRADE_SIZE> [--threshold <VALUE>]
 ```
 
-### Testing Sentiment Fetchers
+### Testing Sentiment Fetcher
 ```bash
-# Test XAU/USD sentiment fetcher
-python3 sentiment_fetcher_xauusd.py
-
-# Test generic sentiment fetcher
-python3 sentiment_fetcher.py
+# Test sentiment fetcher with various sources/symbols
+python3 sentiment_fetcher_clickhouse.py
 ```
 
 ## Dependencies
@@ -63,6 +62,7 @@ Required Python packages:
 
 ## Important Notes
 
-- The system uses a 480-minute (8-hour) window for sentiment averaging in ClickHouse queries
-- API credentials are embedded in code - consider using environment variables for production
-- The main script expects sentiment_fetcher_xauusd to be available as an import
+- The timeframe parameter controls the lookback period for sentiment averaging in ClickHouse queries
+- API credentials are stored in config.py (gitignored for security)
+- The system supports any source/symbol combination via dynamic table names: st_{source}_{symbol}
+- Threshold and timeframe are fully configurable via command-line arguments

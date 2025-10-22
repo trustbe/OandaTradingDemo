@@ -19,7 +19,7 @@ python3 oanda_trade_avg.py \
 
 This will:
 - Use XM sentiment data for Gold
-- Look back 480 minutes (8 hours) by default
+- Look back 1440 minutes (24 hours)
 - Use ±5% threshold for trading signals
 - Trade 100 units (0.01 lot)
 
@@ -34,12 +34,11 @@ python3 oanda_trade_avg.py \
     --source fxblue \
     --timeframe 1440 \
     --units 10000 \
-    --threshold 10.0 \
-    --minutes 1440
+    --threshold 10.0
 ```
 
 This configuration:
-- Uses 24-hour sentiment average (1440 minutes)
+- Uses 24-hour sentiment average (timeframe 1440 minutes)
 - Requires ±10% sentiment extreme to trigger trades
 - More conservative, fewer trades
 - Suitable for volatile market conditions
@@ -53,14 +52,13 @@ python3 oanda_trade_avg.py \
     --account 101-001-123456-001 \
     --symbol GBPUSD \
     --source xm \
-    --timeframe 60 \
+    --timeframe 240 \
     --units 5000 \
-    --threshold 3.0 \
-    --minutes 240
+    --threshold 3.0
 ```
 
 Features:
-- 4-hour sentiment lookback (240 minutes)
+- 4-hour sentiment lookback (timeframe 240 minutes)
 - ±3% threshold for quicker signals
 - More frequent position changes
 - Higher risk/reward profile
@@ -91,11 +89,11 @@ Test sentiment data without trading:
 from sentiment_fetcher_clickhouse import get_last_sentiment
 
 # Check Gold sentiment (8-hour average)
-xau_sentiment = get_last_sentiment(source="xm", symbol="xauusd", minutes=480)
+xau_sentiment = get_last_sentiment(source="xm", symbol="xauusd", timeframe=480)
 print(f"XAU/USD sentiment: {xau_sentiment}")
 
 # Check EUR/USD sentiment (24-hour average)
-eur_sentiment = get_last_sentiment(source="fxblue", symbol="eurusd", minutes=1440)
+eur_sentiment = get_last_sentiment(source="fxblue", symbol="eurusd", timeframe=1440)
 print(f"EUR/USD sentiment: {eur_sentiment}")
 ```
 
@@ -113,8 +111,8 @@ pairs = [
     ("xm", "usdjpy", 480),
 ]
 
-for source, symbol, minutes in pairs:
-    sentiment = get_last_sentiment(source, symbol, minutes)
+for source, symbol, timeframe in pairs:
+    sentiment = get_last_sentiment(source, symbol, timeframe)
     if sentiment is not None:
         action = "SHORT" if sentiment < -5 else "LONG" if sentiment > 5 else "NEUTRAL"
         print(f"{symbol.upper():8} ({source:6}): {sentiment:6.1f} -> {action}")
@@ -160,10 +158,9 @@ python3 oanda_trade_avg.py \
     --account $ACCOUNT \
     --symbol XAUUSD \
     --source xm \
-    --timeframe 1440 \
+    --timeframe 720 \
     --units 100 \
-    --threshold 7.5 \
-    --minutes 720 >> $LOG_DIR/xauusd.log 2>&1
+    --threshold 7.5 >> $LOG_DIR/xauusd.log 2>&1
 
 sleep 5
 
@@ -172,10 +169,9 @@ python3 oanda_trade_avg.py \
     --account $ACCOUNT \
     --symbol EURUSD \
     --source fxblue \
-    --timeframe 1440 \
+    --timeframe 480 \
     --units 10000 \
-    --threshold 5.0 \
-    --minutes 480 >> $LOG_DIR/eurusd.log 2>&1
+    --threshold 5.0 >> $LOG_DIR/eurusd.log 2>&1
 
 sleep 5
 
@@ -184,10 +180,9 @@ python3 oanda_trade_avg.py \
     --account $ACCOUNT \
     --symbol GBPUSD \
     --source xm \
-    --timeframe 1440 \
+    --timeframe 240 \
     --units 5000 \
-    --threshold 3.0 \
-    --minutes 240 >> $LOG_DIR/gbpusd.log 2>&1
+    --threshold 3.0 >> $LOG_DIR/gbpusd.log 2>&1
 
 echo "$(date): Trading cycle completed" >> $LOG_DIR/main.log
 ```
@@ -210,17 +205,16 @@ import time
 import subprocess
 from datetime import datetime
 
-def run_trading(symbol, source, units, threshold, minutes):
+def run_trading(symbol, source, units, threshold, timeframe):
     \"\"\"Execute trading for a specific symbol\"\"\"
     cmd = [
         "python3", "oanda_trade_avg.py",
         "--account", "101-001-123456-001",
         "--symbol", symbol,
         "--source", source,
-        "--timeframe", "1440",
+        "--timeframe", str(timeframe),
         "--units", str(units),
-        "--threshold", str(threshold),
-        "--minutes", str(minutes)
+        "--threshold", str(threshold)
     ]
 
     print(f"{datetime.now()}: Running {symbol}")
@@ -343,7 +337,7 @@ Simple backtesting framework:
 import pandas as pd
 from datetime import datetime, timedelta
 
-def backtest_strategy(symbol, source, threshold, minutes, days_back=30):
+def backtest_strategy(symbol, source, threshold, timeframe, days_back=30):
     \"\"\"Simple backtest of the strategy\"\"\"
 
     results = []
@@ -353,7 +347,7 @@ def backtest_strategy(symbol, source, threshold, minutes, days_back=30):
     # This would need actual historical data
     # Placeholder for demonstration
 
-    print(f"Backtesting {symbol} with threshold={threshold}, lookback={minutes}min")
+    print(f"Backtesting {symbol} with threshold={threshold}, lookback={timeframe}min")
     print(f"Period: {start_date} to {end_date}")
 
     # Add your backtesting logic here
@@ -364,7 +358,7 @@ def backtest_strategy(symbol, source, threshold, minutes, days_back=30):
     return results
 
 # Run backtest
-backtest_strategy("xauusd", "xm", threshold=5.0, minutes=480, days_back=30)
+backtest_strategy("xauusd", "xm", threshold=5.0, timeframe=480, days_back=30)
 ```
 
 ## Troubleshooting Examples
