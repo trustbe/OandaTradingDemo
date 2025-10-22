@@ -20,12 +20,12 @@ python3 oanda_trade_avg.py \
 This will:
 - Use XM sentiment data for Gold
 - Look back 1440 minutes (24 hours)
-- Use ±5% threshold for trading signals
+- Use ±1% treshold for trading signals
 - Trade 100 units (0.01 lot)
 
 ### 2. EUR/USD with Custom Threshold
 
-More conservative approach with wider threshold:
+More conservative approach with wider treshold:
 
 ```bash
 python3 oanda_trade_avg.py \
@@ -34,7 +34,7 @@ python3 oanda_trade_avg.py \
     --source fxblue \
     --timeframe 1440 \
     --units 10000 \
-    --threshold 10.0
+    --treshold 10.0
 ```
 
 This configuration:
@@ -54,12 +54,12 @@ python3 oanda_trade_avg.py \
     --source xm \
     --timeframe 240 \
     --units 5000 \
-    --threshold 3.0
+    --treshold 3.0
 ```
 
 Features:
 - 4-hour sentiment lookback (timeframe 240 minutes)
-- ±3% threshold for quicker signals
+- ±3% treshold for quicker signals
 - More frequent position changes
 - Higher risk/reward profile
 
@@ -160,7 +160,7 @@ python3 oanda_trade_avg.py \
     --source xm \
     --timeframe 720 \
     --units 100 \
-    --threshold 7.5 >> $LOG_DIR/xauusd.log 2>&1
+    --treshold 7.5 >> $LOG_DIR/xauusd.log 2>&1
 
 sleep 5
 
@@ -171,7 +171,7 @@ python3 oanda_trade_avg.py \
     --source fxblue \
     --timeframe 480 \
     --units 10000 \
-    --threshold 5.0 >> $LOG_DIR/eurusd.log 2>&1
+    --treshold 5.0 >> $LOG_DIR/eurusd.log 2>&1
 
 sleep 5
 
@@ -182,7 +182,7 @@ python3 oanda_trade_avg.py \
     --source xm \
     --timeframe 240 \
     --units 5000 \
-    --threshold 3.0 >> $LOG_DIR/gbpusd.log 2>&1
+    --treshold 3.0 >> $LOG_DIR/gbpusd.log 2>&1
 
 echo "$(date): Trading cycle completed" >> $LOG_DIR/main.log
 ```
@@ -205,7 +205,7 @@ import time
 import subprocess
 from datetime import datetime
 
-def run_trading(symbol, source, units, threshold, timeframe):
+def run_trading(symbol, source, units, treshold, timeframe):
     \"\"\"Execute trading for a specific symbol\"\"\"
     cmd = [
         "python3", "oanda_trade_avg.py",
@@ -214,7 +214,7 @@ def run_trading(symbol, source, units, threshold, timeframe):
         "--source", source,
         "--timeframe", str(timeframe),
         "--units", str(units),
-        "--threshold", str(threshold)
+        "--treshold", str(treshold)
     ]
 
     print(f"{datetime.now()}: Running {symbol}")
@@ -337,7 +337,7 @@ Simple backtesting framework:
 import pandas as pd
 from datetime import datetime, timedelta
 
-def backtest_strategy(symbol, source, threshold, timeframe, days_back=30):
+def backtest_strategy(symbol, source, treshold, timeframe, days_back=30):
     \"\"\"Simple backtest of the strategy\"\"\"
 
     results = []
@@ -347,7 +347,7 @@ def backtest_strategy(symbol, source, threshold, timeframe, days_back=30):
     # This would need actual historical data
     # Placeholder for demonstration
 
-    print(f"Backtesting {symbol} with threshold={threshold}, lookback={timeframe}min")
+    print(f"Backtesting {symbol} with treshold={treshold}, lookback={timeframe}min")
     print(f"Period: {start_date} to {end_date}")
 
     # Add your backtesting logic here
@@ -358,7 +358,7 @@ def backtest_strategy(symbol, source, threshold, timeframe, days_back=30):
     return results
 
 # Run backtest
-backtest_strategy("xauusd", "xm", threshold=5.0, timeframe=480, days_back=30)
+backtest_strategy("xauusd", "xm", treshold=1.0, timeframe=480, days_back=30)
 ```
 
 ## Troubleshooting Examples

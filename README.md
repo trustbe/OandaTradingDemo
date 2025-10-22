@@ -5,7 +5,7 @@ Automated trading system for Oanda platform using sentiment analysis from ClickH
 ## Features
 
 - **Dynamic Symbol Support**: Trade any currency pair or instrument available in your ClickHouse database
-- **Configurable Parameters**: Adjustable threshold levels and lookback periods
+- **Configurable Parameters**: Adjustable treshold levels and lookback periods
 - **Contrarian Strategy**: Automatically trades against extreme market sentiment
 - **Position Management**: Intelligent position handling with automatic closing of opposing trades
 - **Multi-Source Support**: Works with any sentiment data provider (XM, FXBlue, etc.)
@@ -83,7 +83,7 @@ python3 oanda_trade_avg.py \
     --source fxblue \
     --timeframe 720 \
     --units 10000 \
-    --threshold 7.5
+    --treshold 7.5
 ```
 
 ### Command Line Arguments
@@ -95,7 +95,7 @@ python3 oanda_trade_avg.py \
 | `--source` | Yes | - | Data source (e.g., xm, fxblue) |
 | `--timeframe` | Yes | - | Lookback period in minutes for sentiment averaging (e.g., 480, 720, 1440) |
 | `--units` | Yes | - | Number of units to trade |
-| `--threshold` | No | 5.0 | Threshold for trading signals |
+| `--treshold` | No | 1.0 | Treshold for trading signals |
 
 ## Trading Logic
 
@@ -104,9 +104,9 @@ The system implements a contrarian trading strategy:
 1. **Fetch Sentiment**: Retrieves average client sentiment over the specified period
 2. **Calculate Signal**: Computes `50 - AVG(longval)` to get the contrarian ratio
 3. **Execute Trades**:
-   - If ratio < -threshold: Market is heavily long → Open SHORT position
-   - If ratio > +threshold: Market is heavily short → Open LONG position
-   - If -threshold ≤ ratio ≤ +threshold: Neutral zone → Close all positions
+   - If ratio < -treshold: Market is heavily long → Open SHORT position
+   - If ratio > +treshold: Market is heavily short → Open LONG position
+   - If -treshold ≤ ratio ≤ +treshold: Neutral zone → Close all positions
 
 ### Example Scenarios
 
@@ -119,7 +119,7 @@ The system implements a contrarian trading strategy:
   - Opens a long position (trading against the crowd)
 
 - Sentiment shows 48% of clients are long (ratio = +2):
-  - Within neutral zone (assuming threshold = 5)
+  - Within neutral zone (assuming treshold = 1)
   - System closes all positions and waits
 
 ## Database Structure

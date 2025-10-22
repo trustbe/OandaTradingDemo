@@ -12,7 +12,7 @@ This is an automated trading system that executes trades on the Oanda platform b
 
 1. **oanda_trade_avg.py**: Main trading script that coordinates the entire trading flow
    - Connects to Oanda API for trade execution
-   - Implements trading logic based on sentiment thresholds (±5%)
+   - Implements trading logic based on sentiment tresholds (±1%)
    - Manages position opening/closing based on market sentiment
 
 2. **sentiment_fetcher_clickhouse.py**: ClickHouse sentiment data fetcher
@@ -30,16 +30,16 @@ This is an automated trading system that executes trades on the Oanda platform b
 
 1. Fetch sentiment data from ClickHouse (configurable timeframe)
 2. Calculate client ratio: `50 - AVG(longval)`
-3. Execute trades based on configurable threshold (default ±5):
-   - Ratio < -threshold: Close longs, open short position
-   - Ratio > +threshold: Close shorts, open long position
-   - Within threshold range: Close all positions
+3. Execute trades based on configurable treshold (default ±5):
+   - Ratio < -treshold: Close longs, open short position
+   - Ratio > +treshold: Close shorts, open long position
+   - Within treshold range: Close all positions
 
 ## Development Commands
 
 ### Running the Trading Script
 ```bash
-python3 oanda_trade_avg.py --account <ACCOUNT_ID> --symbol <SYMBOL> --source <xm|fxblue> --timeframe <MINUTES> --units <TRADE_SIZE> [--threshold <VALUE>]
+python3 oanda_trade_avg.py --account <ACCOUNT_ID> --symbol <SYMBOL> --source <xm|fxblue> --timeframe <MINUTES> --units <TRADE_SIZE> [--treshold <VALUE>]
 ```
 
 ### Testing Sentiment Fetcher

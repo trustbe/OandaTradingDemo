@@ -84,7 +84,7 @@ def main():
 	parser.add_argument('--source', required=True, help='Trading source (e.g., xm, fxblue)')
 	parser.add_argument('--timeframe', required=True, type=int, help='Lookback period in minutes for sentiment averaging (e.g., 480, 1440)')
 	parser.add_argument('--units', required=True, type=int, help='Number of units to trade')
-	parser.add_argument('--threshold', type=float, default=5.0, help='Threshold for trading signals (default: 5.0)')
+	parser.add_argument('--treshold', type=float, default=1.0, help='Treshold for trading signals (default: 1.0)')
 	
 	args = parser.parse_args()
 
@@ -105,15 +105,15 @@ def main():
 
 	long_percentage = round(sentiment_data)
 
-	print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}, Threshold: ±{args.threshold}, Timeframe: {args.timeframe} min")
+	print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}, Treshold: ±{args.treshold}, Timeframe: {args.timeframe} min")
 
-	# Trading logic with configurable threshold
+	# Trading logic with configurable treshold
 	command = "_"
-	if long_percentage < -args.threshold:
+	if long_percentage < -args.treshold:
 		# Close all long positions before going short
 		trader.close_all_orders(args.symbol, "LONG")
 		command = "SELL"
-	elif long_percentage > args.threshold:
+	elif long_percentage > args.treshold:
 		# Close all short positions before going long
 		trader.close_all_orders(args.symbol, "SHORT")
 		command = "BUY"
