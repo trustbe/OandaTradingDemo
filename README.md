@@ -153,6 +153,26 @@ python3 sentiment_fetcher_clickhouse.py
 
 This will fetch and display sentiment data for various configured pairs.
 
+## Script Timeout & Connection Handling
+
+To prevent the script from hanging indefinitely on connection issues, use the `timeout` command:
+
+### Linux/Mac:
+```bash
+# Kill after 60 seconds
+timeout 60 python3 oanda_trade_avg.py --account ACCOUNT --symbol XAUUSD --source xm --timeframe 480 --units 100
+
+# Kill with SIGKILL after 60 seconds (with 5 second grace period)
+timeout -k 65 60 python3 oanda_trade_avg.py --account ACCOUNT --symbol XAUUSD --source xm --timeframe 480 --units 100
+```
+
+### Built-in Timeouts:
+- ClickHouse requests: 10 seconds (configurable in sentiment_fetcher_clickhouse.py)
+- Recommended script timeout: 30-60 seconds for typical operations
+
+### Windows:
+For Windows, consider using Task Scheduler with a timeout setting or implement a Python-based timeout wrapper.
+
 ## Security Considerations
 
 - **Never commit `config.py`** to public repositories

@@ -26,11 +26,53 @@ class OandaTrader:
 		count = 0
 		r = trades.OpenTrades(accountID=self.account_id)
 		self.client.request(r)
-		
+
 		for trade in r.response['trades']:
 			if trade['instrument'] == self.get_oanda_symbol(symbol):
 				count += 1
 		return count
+
+	def log_current_positions(self, symbol=None):
+		"""Log detailed information about current positions."""
+		r = trades.OpenTrades(accountID=self.account_id)
+		self.client.request(r)
+
+		all_trades = r.response.get('trades', [])
+
+		if not all_trades:
+			print("No open positions found")
+			return
+
+		# Filter by symbol if provided
+		if symbol:
+			relevant_trades = [t for t in all_trades if t['instrument'] == self.get_oanda_symbol(symbol)]
+			print(f"\n=== Current Positions for {symbol} ===")
+		else:
+			relevant_trades = all_trades
+			print(f"\n=== All Current Positions ===")
+
+		if not relevant_trades:
+			print(f"No open positions for {symbol}")
+			return
+
+		for trade in relevant_trades:
+			trade_id = trade['id']
+			instrument = trade['instrument']
+			units = float(trade['initialUnits'])
+			current_units = float(trade['currentUnits'])
+			direction = "LONG" if units > 0 else "SHORT"
+			price = float(trade['price'])
+			unrealized_pl = float(trade['unrealizedPL'])
+
+			print(f"  Trade ID: {trade_id}")
+			print(f"  Instrument: {instrument}")
+			print(f"  Direction: {direction}")
+			print(f"  Units: {abs(units)}")
+			print(f"  Entry Price: {price}")
+			print(f"  Unrealized P/L: {unrealized_pl}")
+			print(f"  ---")
+
+		print(f"Total positions: {len(relevant_trades)}\n")
 
 	def order_send(self, symbol, units):
 		"""Send a market order."""
@@ -50,18 +92,22 @@ class OandaTrader:
 		If direction is None, close all orders regardless of direction.
 		"""
 		if self.get_orders_count(symbol) == 0:
-			print("No active orders to close")
+			print(f"No active orders to close for {symbol}")
 			return
 
 		r = trades.OpenTrades(accountID=self.account_id)
 		self.client.request(r)
-		
+
+		closed_count = 0
 		for trade in r.response['trades']:
 			trade_id = trade['id']
 			initial_units = float(trade['initialUnits'])
-			
-			if trade['instrument'] == self.get_oanda_symbol(symbol):
+			instrument = trade['instrument']
+
+			if instrument == self.get_oanda_symbol(symbol):
 				should_close = False
+				trade_direction = "LONG" if initial_units > 0 else "SHORT"
+
 				if direction is None:
 					should_close = True
 				elif direction == 'LONG' and initial_units > 0:
@@ -70,11 +116,22 @@ class OandaTrader:
 					should_close = True
 
 				if should_close:
-					print(f"Closing trade: {trade}")
+					unrealized_pl = float(trade.get('unrealizedPL', 0))
+					print(f"Closing {trade_direction} position: ID={trade_id}, Units={abs(initial_units)}, P/L={unrealized_pl}")
+
 					order = TradeCloseRequest()
 					tr = trades.TradeClose(self.account_id, tradeID=trade_id, data=order.data)
 					response = self.client.request(tr)
-					print(f"Close response: {response}")
+
+					# Log close details
+					if 'orderFillTransaction' in response:
+						fill = response['orderFillTransaction']
+						realized_pl = float(fill.get('pl', 0))
+						print(f"  ✓ Closed successfully - Realized P/L: {realized_pl}")
+					closed_count += 1
+
+		if closed_count > 0:
+			print(f"Total {closed_count} position(s) closed for {symbol}")
 
 def main():
 	"""Main function to handle the trading logic."""
@@ -106,6 +163,9 @@ def main():
 	long_percentage = round(sentiment_data)
 
 	print(f"Symbol: {args.symbol}, Long Percentage: {long_percentage}, Treshold: ±{args.treshold}, Timeframe: {args.timeframe} min")
+
+	# Log current positions
+	trader.log_current_positions(args.symbol)
 
 	# Trading logic with configurable treshold
 	command = "_"

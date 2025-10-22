@@ -131,7 +131,8 @@ Run every 4 hours during market hours:
 crontab -e
 
 # Add this line (runs at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
-0 */4 * * * cd /home/user/OandaTradingDemo && python3 oanda_trade_avg.py --account 101-001-123456-001 --symbol XAUUSD --source xm --timeframe 1440 --units 100 >> /var/log/trading.log 2>&1
+# With 60 second timeout to prevent hanging
+0 */4 * * * cd /home/user/OandaTradingDemo && timeout 60 python3 oanda_trade_avg.py --account 101-001-123456-001 --symbol XAUUSD --source xm --timeframe 1440 --units 100 >> /var/log/trading.log 2>&1
 ```
 
 ### 2. Advanced Scheduling with Multiple Pairs
@@ -153,8 +154,8 @@ cd $SCRIPT_DIR
 
 echo "$(date): Starting trading cycle" >> $LOG_DIR/main.log
 
-# Gold - Conservative
-python3 oanda_trade_avg.py \
+# Gold - Conservative (with 60s timeout)
+timeout 60 python3 oanda_trade_avg.py \
     --account $ACCOUNT \
     --symbol XAUUSD \
     --source xm \
@@ -164,8 +165,8 @@ python3 oanda_trade_avg.py \
 
 sleep 5
 
-# EUR/USD - Standard
-python3 oanda_trade_avg.py \
+# EUR/USD - Standard (with 60s timeout)
+timeout 60 python3 oanda_trade_avg.py \
     --account $ACCOUNT \
     --symbol EURUSD \
     --source fxblue \
@@ -175,8 +176,8 @@ python3 oanda_trade_avg.py \
 
 sleep 5
 
-# GBP/USD - Aggressive
-python3 oanda_trade_avg.py \
+# GBP/USD - Aggressive (with 60s timeout)
+timeout 60 python3 oanda_trade_avg.py \
     --account $ACCOUNT \
     --symbol GBPUSD \
     --source xm \
